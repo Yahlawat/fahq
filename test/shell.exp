@@ -1,0 +1,67 @@
+#!/usr/bin/expect -f
+# Drives an interactive zsh with shell/fahq.zsh loaded and counts plays.
+# afplay is stubbed to append to a log, so nothing is heard.
+# Usage: shell.exp clean|real <fahq.zsh> <scratch dir>
+set mode [lindex $argv 0]
+set fahq [lindex $argv 1]
+set dir [lindex $argv 2]
+set log "$dir/played.log"
+set timeout 15
+log_user 0
+
+if {$mode eq "clean"} {
+  spawn env -u TERM_PROGRAM zsh -f -i
+} else {
+  spawn env -u TERM_PROGRAM zsh -i
+}
+
+# Matching the prompt text isn't reliable: zsh redraws "prompt + command" when you
+# press Enter, before the command runs. So a precmd hook (added after fahq's) prints
+# a marker when a new prompt is really ready. It's written as '@@RE''ADY@@' so the
+# echoed setup line doesn't match it.
+proc wait_prompt {} {
+  expect {
+    "@@READY@@" {}
+    timeout { puts "FAIL  [set ::mode]: prompt never came back after: [set ::last]"; exit 1 }
+  }
+}
+set last "setup"
+proc run {cmd} { set ::last $cmd; send "$cmd\r"; wait_prompt }
+proc plays {} {
+  global log
+  if {![file exists $log]} { return 0 }
+  set f [open $log]; set text [string trim [read $f]]; close $f
+  if {$text eq ""} { return 0 }
+  return [llength [split $text "\n"]]
+}
+set failed 0
+# The stub's write can land a moment after the prompt, so give it 1.5 s.
+proc check {name want} {
+  global failed mode
+  for {set i 0} {$i < 15 && [plays] < $want} {incr i} { after 100 }
+  after 300
+  set got [plays]
+  if {$got == $want} { puts "PASS  $mode: $name" } else { puts "FAIL  $mode: $name (plays=$got, want $want)"; set failed 1 }
+}
+
+send "FAHQ_MUTE_FILE='$dir/muted'; FAHQ_COOLDOWN=5; source '$fahq'; afplay() { print played >> '$log' }; _t_ready() { print -r -- '@@RE''ADY@@' }; precmd_functions+=(_t_ready)\r"
+wait_prompt
+after 300
+
+run "true";                  check "command succeeds: quiet" 0
+run "false";                 check "command fails: plays" 1
+run "";                      check "empty Enter after a failure: quiet" 1
+run "ls /no/such/dir";       check "failure within the cooldown: quiet" 1
+run "sleep 4";               check "slow successful command: quiet" 1
+run "ls /no/such/dir";       check "failure after the cooldown: plays" 2
+# A process killed by SIGINT, which is what Ctrl+C does (zsh reports exit 130).
+run {sh -c 'kill -INT $$'};  check "Ctrl+C (SIGINT): quiet" 2
+run "fahq off"
+run "false";                 check "muted: quiet" 2
+run "fahq on"
+run "sleep 5.2"
+run "false";                 check "unmuted: plays" 3
+
+send "exit\r"
+expect eof
+exit $failed

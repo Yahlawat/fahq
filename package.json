@@ -1,0 +1,117 @@
+{
+  "name": "fahq",
+  "displayName": "Fahq",
+  "description": "Plays a sound when you add an error to the file you're editing, or a terminal command or notebook cell fails.",
+  "version": "0.5.0",
+  "publisher": "yashahlawat",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "fahq.toggle",
+        "title": "Fahq: Toggle On/Off"
+      },
+      {
+        "command": "fahq.test",
+        "title": "Fahq: Play Sound"
+      },
+      {
+        "command": "fahq.chooseSound",
+        "title": "Fahq: Choose Sound File..."
+      },
+      {
+        "command": "fahq.resetSound",
+        "title": "Fahq: Use Default Sound"
+      }
+    ],
+    "configuration": {
+      "title": "fahq",
+      "properties": {
+        "fahq.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Play a sound on new editor errors and enabled terminal or notebook failures."
+        },
+        "fahq.terminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also play when a terminal command fails (non-zero exit). Needs terminal shell integration, on by default."
+        },
+        "fahq.notebook": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also play when a notebook cell fails while running (raises an exception). Interrupting the kernel stays quiet."
+        },
+        "fahq.soundPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to your own audio file. Leave empty for the bundled tone.",
+          "scope": "application"
+        },
+        "fahq.volume": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Volume from 0 to 1 (macOS only)."
+        },
+        "fahq.settleMs": {
+          "type": "number",
+          "default": 1000,
+          "description": "Wait this long after diagnostics stop changing before checking, so half-typed words don't count."
+        },
+        "fahq.cooldownMs": {
+          "type": "number",
+          "default": 2000,
+          "description": "Minimum time between sounds."
+        },
+        "fahq.includeWarnings": {
+          "type": "boolean",
+          "default": false,
+          "description": "Count warnings as well as errors."
+        }
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Yahlawat/fahq.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Yahlawat/fahq/issues"
+  },
+  "homepage": "https://github.com/Yahlawat/fahq#readme",
+  "extensionKind": [
+    "ui"
+  ],
+  "scripts": {
+    "test": "node --test test/audio.test.js",
+    "package": "node -e \"require('node:fs').mkdirSync('dist',{recursive:true})\" && vsce package --no-dependencies --out dist/",
+    "test:install": "node test/install.cjs"
+  },
+  "devDependencies": {
+    "@vscode/test-electron": "2.5.2",
+    "@vscode/vsce": "4.1.0"
+  },
+  "files": [
+    "src/**",
+    "media/**",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "overrides": {
+    "@vscode/vsce": {
+      "minimatch": "11.0.8"
+    }
+  }
+}
