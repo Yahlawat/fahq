@@ -10,6 +10,8 @@ An error sound for VS Code and Cursor. It plays when you add an error to the fil
 2. Open **Extensions → … → Install from VSIX…** in VS Code or Cursor and select the file. The same download works on macOS and Windows.
 3. Click **fahq** in the status bar to turn it on. Use **Fahq: Play Sound** in the Command Palette to try the tone.
 
+In Cursor, open the **Editor Window** before installing or using the extension.
+
 Use **Fahq: Choose Sound File…** to pick a local clip or **Fahq: Use Default Sound** to go back to the bundled tone.
 
 ## When it plays
